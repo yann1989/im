@@ -10,9 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/mailru/easygo/netpoll"
 	"net/http"
-	"yann-chat/common"
 	"yann-chat/tools/log"
-	"yann-chat/tools/utils"
 	"yann-chat/tools/view"
 )
 
@@ -62,12 +60,7 @@ func Accept(request *restful.Request, response *restful.Response) *Node {
 		return nil
 	}
 
-	//设置在线状态 失败则删除管理中的节点
-	if err = utils.RedisUtils.Hset(string(common.REDIS_KEY_USER_ONLINE_PREFIX), uid, common.USER_ONLINE); err != nil {
-		log.Error("redis写入失败")
-		manager.Remove(uid)
-		return nil
-	}
+	//todo 根据业务需求, 可记录在线状态
 
 	return node
 }
