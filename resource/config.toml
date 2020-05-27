@@ -1,0 +1,43 @@
+[application]
+    name = "taurus manager"
+    owner = "yann"
+
+[log]
+    # rsyslog server's ip+port
+    rsyslogAddress = "192.168.1.201:10086"
+    # 输出日志到控制台
+    stdout = true
+
+# Web层配置
+[web]
+    # 默认https
+    proto = "http"
+    # ip address, 默认监听的是内网IPv4的8901端口
+    address = "0.0.0.0:8002"
+    # 对应的私钥文件位置
+    keypath = "/Users/yann/Desktop/chat-netpool/src/yann-chat/resource/key.pem"
+
+[dao]
+    # mysql
+#    [dao.mysql]
+#        DSNAPP = "root:123456@tcp(192.168.1.200:3306)/taurus_torent?charset=utf8mb4"
+#        DSNADMIN = "root:123456@tcp(192.168.1.200:3306)/torent_admin?charset=utf8mb4"
+#        Debug = true  #true为全局打印sql
+#        MaxIdleConns = 10   #最大闲置连接数
+#        MaxOpenConns = 100  #最大连接数
+#        MaxConnMaxLifetime = 3000 #设置链接可以重用时长
+    # redis
+    [dao.redis]
+        Addr = "127.0.0.1:6379"
+        Size = 2
+        ServerKey = "1"   #以数字区分每个节点, 自己读取自己的消息队列
+
+[snowflake]
+    WorkerId = 1
+    DatacenterId = 1
+[manager]
+    MaxConnect = 1024  #单机最大连接数
+
+[mq]
+    AmqpAddr="amqp://guest:guest@127.0.0.1:5672/"
+    ExchangeName="chicha:fanout:chat:message"
