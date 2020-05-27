@@ -25,18 +25,18 @@ type Pool struct {
 //param :       初始化开启多少线程
 //return :      线程池
 //***************************************************
-func NewPool(size, queue, spawn int) *Pool {
-	if spawn <= 0 && queue > 0 {
+func NewPool(size, queue, currentSize int) *Pool {
+	if currentSize <= 0 && queue > 0 {
 		panic("dead queue configuration detected")
 	}
-	if spawn > size {
-		panic("spawn > workers")
+	if currentSize > size {
+		panic("currentSize > workers")
 	}
 	p := &Pool{
 		sem:  make(chan struct{}, size),
 		work: make(chan func(), queue),
 	}
-	for i := 0; i < spawn; i++ {
+	for i := 0; i < currentSize; i++ {
 		p.sem <- struct{}{}
 		go p.worker(func() {})
 	}

@@ -51,7 +51,7 @@ func (m *ConnectManager) Start(ctx context.Context, yannChat *chat.YannChat) err
 			log.Error("init poller faild:", err.Error())
 			panic("init poller faild:" + err.Error())
 		}
-		manager.gopool = NewPool(1024, 4096, 1)
+		manager.gopool = NewPool(GOROUTING_MAX_LEN, TASK_MAX_LEN, GOROUTING_INIT_LEN)
 		go m.startConsume()
 		log.Info("connect manager[max_connect:%d] 初始化完成", manager.MaxConnect)
 	})
