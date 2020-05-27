@@ -2,8 +2,45 @@
 An instant chat server
 
 ## Quick start
-- install redis
-- install rabbitmq
+- install redis and start
+- install rabbitmq and start
+- install nginx and start
+- Ngxin config:
+```shell script
+upstream ws {
+    server 127.0.0.1:8002;
+}
+
+server {
+    listen 8001;
+    server_name server_name;
+	access_log /your_dir/chat.log;
+	error_log  /your_dir/error.log;
+    location / {
+  		proxy_pass http://ws/;
+  		proxy_redirect      off;
+  		proxy_set_header    Host              $host;
+  		proxy_set_header    X-Real-IP         $remote_addr;
+  		proxy_set_header    X-Forwarded-For   $proxy_add_x_forwarded_for;
+  		proxy_set_header    X-Forwarded-Proto $scheme;
+	
+  		# WebSocket specific
+  		proxy_http_version 1.1;
+  		proxy_set_header    Upgrade           $http_upgrade;
+  		proxy_set_header    Connection        "upgrade";
+  		proxy_buffering     off;
+	
+  		#
+  		# Bump the timeout's so someting sensible so our connections don't
+  		# disconnect automatically. We've set it to 12 hours.
+  		#
+  		proxy_connect_timeout 10;  
+  		proxy_read_timeout    60;  #心跳时间, 如果60s未给服务端发送消息则会被nginx断开
+  		proxy_send_timeout    60;
+    }
+
+}
+```
 - go get github.com/yann1989/yann-chat
 - build the Yann-chat 
 - edit the config
