@@ -62,7 +62,7 @@ func (m *ConnectManager) Start(ctx context.Context, yannChat *chat.YannChat) err
 func (m *ConnectManager) Stop(ctx context.Context) error {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("eof 释放资源失败")
+			fmt.Println("释放所有websocket 未知错误: %S", err)
 		}
 	}()
 	for key, _ := range manager.nodes {
@@ -96,13 +96,14 @@ func (m *ConnectManager) Add(id int64, conn *websocket.Conn) *Node {
 	node := new(Node)
 	node.ClientId = id
 	node.Conn = conn
+	//失败会panic, 请在调用方法前recover
 	fd := netpoll.Must(netpoll.HandleRead(conn.UnderlyingConn()))
 	node.fd = fd
 	if err := manager.poller.Start(fd, func(ev netpoll.Event) {
 		if ev&(netpoll.EventReadHup|netpoll.EventHup) != 0 {
 			defer func() {
 				if err := recover(); err != nil {
-					log.Error("eof 释放资源失败: %s", err)
+					log.Error("eof 释放资源panic: %s", err)
 				}
 			}()
 			log.Info("对端关闭事件触发")
@@ -140,7 +141,7 @@ func (m *ConnectManager) ifConnectedThanRemove(id int64) {
 }
 
 //***************************************************
-//Description : 删除节点,使用前请先加互斥锁
+//Description : 从内核树中移除, 关闭连接, 删除节点
 //param :       用户id
 //***************************************************
 func (m *ConnectManager) Remove(id int64) {
@@ -149,7 +150,7 @@ func (m *ConnectManager) Remove(id int64) {
 	if node, has := manager.nodes[id]; has {
 		err := manager.poller.Stop(node.fd)
 		if err != nil {
-			log.Error("重复登录 关闭之前连接失败")
+			log.Error("关闭连接失败: %S", err)
 		}
 		delete(manager.nodes, id)
 		manager.currentConnect--
