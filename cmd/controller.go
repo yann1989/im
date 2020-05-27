@@ -126,5 +126,6 @@ func (h *HttpServer) Stop(ctx context.Context) (err error) {
 	if err = h.server.Shutdown(ctx); err != nil {
 		log.Error("web层关闭异常: %v", err)
 	}
+	log.Info("web 服务已关闭")
 	return
 }
