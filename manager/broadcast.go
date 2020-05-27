@@ -74,20 +74,11 @@ func (b *broadcast) Execute() error {
 		//		string(b.jsonData)); err != nil {
 		//		return err
 		//	}
+	case common.MSG_TYPE_HEART:
+		return nil
 	}
 
-	//广播到所有节点 todo 判断如何为本机节点则直接发送, 否则广播到所有节点, 接入rebbitmq
-	//list := []string{}
-	//list, err = utils.RedisUtils.SmembersString(common.REDIS_KEY_IM_SERVER)
-	//if err != nil {
-	//	return err
-	//}
-	//for _, serverKey := range list {
-	//	if err = utils.RedisUtils.RPUSH(serverKey, b.jsonData); err != nil {
-	//		log.Error("通过redis广播消息到%s失败: %s", serverKey, err.Error())
-	//	}
-	//}
-	//fmt.Println("写入成功")
+	//广播到所有节点 todo 判断如果为本机节点则直接发送, 否则广播到所有节点
 	log.Info("历史消息写入redis成功")
 	err = mq.Broadcast(b.jsonData)
 	if err != nil {

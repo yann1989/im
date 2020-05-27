@@ -11,6 +11,7 @@ const (
 	MSG_TYPE_GROUP              //2
 	MSG_TYPE_SYSTEM             //3
 	MSG_TYPE_SERVICE            //4
+	MSG_TYPE_HEART   = 99
 )
 
 const (
