@@ -1,9 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
 	"os"
 	"os/signal"
 	"path/filepath"

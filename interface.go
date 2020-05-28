@@ -4,7 +4,7 @@
 
 package chat
 
-import "golang.org/x/net/context"
+import "context"
 
 type ServiceConstructor func(ctx *context.Context) (Service, error)
 

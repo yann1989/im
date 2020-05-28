@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"io/ioutil"
 	"net/http"
@@ -16,7 +17,6 @@ import (
 	"yann-chat/tools/log"
 
 	"github.com/emicklei/go-restful"
-	"golang.org/x/net/context"
 )
 
 type HttpServer struct {
