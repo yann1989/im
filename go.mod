@@ -9,7 +9,6 @@ require (
 	github.com/gomodule/redigo v1.8.1
 	github.com/gorilla/websocket v1.4.2
 	github.com/jinzhu/gorm v1.9.12
-	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/mailru/easygo v0.0.0-20190618140210-3c14a0dc985f
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.0.0
