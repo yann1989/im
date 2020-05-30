@@ -5,9 +5,10 @@
 package manager
 
 import (
+	"github.com/gorilla/websocket"
+	"time"
 	"yann-chat/common"
 	"yann-chat/model"
-	"yann-chat/tools/log"
 	"yann-chat/tools/mq"
 	"yann-chat/tools/snowflake"
 	"yann-chat/tools/utils"
@@ -50,6 +51,9 @@ func (b *broadcast) Execute() error {
 			string(b.jsonData)); err != nil {
 			return err
 		}
+		if err = b.sendOrBroadcast(message.ToID); err != nil {
+			return err
+		}
 	//存入群聊历史消息
 	case common.MSG_TYPE_GROUP:
 		if err = utils.RedisUtils.ZaddSingle(
@@ -58,6 +62,7 @@ func (b *broadcast) Execute() error {
 			string(b.jsonData)); err != nil {
 			return err
 		}
+		return mq.Broadcast(b.jsonData)
 	//存入系统历史消息
 	case common.MSG_TYPE_SYSTEM:
 		if err = utils.RedisUtils.ZaddSingle(
@@ -66,24 +71,28 @@ func (b *broadcast) Execute() error {
 			string(b.jsonData)); err != nil {
 			return err
 		}
-		////存入客服历史消息  todo 新增连接类型 type 1=用户 2=客服
-		//case common.MSG_TYPE_SERVICE:
-		//	if err = utils.RedisUtils.ZaddSingle(
-		//		utils.RedisUtils.BuildKey(common.REDIS_KEY_HISTORY_MESSAGE_SERVICE_PREFIX, uid),
-		//		message.CreateTime,
-		//		string(b.jsonData)); err != nil {
-		//		return err
-		//	}
+		if err = b.sendOrBroadcast(message.ToID); err != nil {
+			return err
+		}
+	//心跳
 	case common.MSG_TYPE_HEART:
+	}
+
+	return nil
+}
+
+func (b *broadcast) sendOrBroadcast(userID int64) error {
+	manager.rwlocker.RLock()
+	defer manager.rwlocker.RUnlock()
+	if node, has := manager.nodes[userID]; has {
+		err := mq.Broadcast(b.jsonData)
+		if err != nil {
+			return err
+		}
+		node.Conn.SetWriteDeadline(time.Now().Add(time.Second * 3))
+		node.Conn.WriteMessage(websocket.TextMessage, b.jsonData)
 		return nil
 	}
 
-	//广播到所有节点 todo 判断如果为本机节点则直接发送, 否则广播到所有节点
-	log.Info("历史消息写入redis成功")
-	err = mq.Broadcast(b.jsonData)
-	if err != nil {
-		return err
-	}
-	log.Info("消息广播成功")
-	return nil
+	return mq.Broadcast(b.jsonData)
 }

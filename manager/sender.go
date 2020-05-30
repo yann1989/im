@@ -27,7 +27,7 @@ func (m *ConnectManager) startConsume() {
 			m.dispatch(msg.Body)
 		})
 	}
-	log.Error("退出conusme")
+	log.Info("退出conusme")
 }
 
 //分发消息

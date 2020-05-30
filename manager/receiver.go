@@ -10,7 +10,6 @@ import (
 )
 
 func Receiver(node *Node) {
-	log.Info("读事件开始读取数据")
 	err := node.Conn.SetReadDeadline(time.Now().Add(time.Second * 3))
 	if err != nil {
 		return

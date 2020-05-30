@@ -106,9 +106,7 @@ func (m *ConnectManager) Add(id int64, conn *websocket.Conn) *Node {
 					log.Error("eof 释放资源panic: %s", err)
 				}
 			}()
-			log.Info("对端关闭事件触发")
-			m.Remove(id)
-			log.Info("websocket 被关闭")
+			m.Remove(id) //闭包
 		}
 
 		log.Info("读事件触发")
@@ -118,7 +116,7 @@ func (m *ConnectManager) Add(id int64, conn *websocket.Conn) *Node {
 					fmt.Println("读事件执行失败")
 				}
 			}()
-			Receiver(node)
+			Receiver(node) //闭包
 
 		})
 
