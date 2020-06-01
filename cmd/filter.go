@@ -27,7 +27,7 @@ func (h *HttpServer) tokenFilter(req *restful.Request, resp *restful.Response, c
 	chain.ProcessFilter(req, resp)
 }
 
-//测试用, 直接传websocket?uid=xxxxx
+//测试用, 直接传ws://host:port/websocket?uid=xxxxx
 func (h *HttpServer) testTokenFilter(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	//校验token
 	uid := cast.ToInt64(req.QueryParameter(manager.UID))
