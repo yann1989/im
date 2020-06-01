@@ -152,12 +152,12 @@ func DecodeSegment(seg string) ([]byte, error) {
 // flag: true, 更新过token, false, 没有更新过token
 // err: 如果不为空, 表示校验token失败
 // 调用方应该先判断err是否为空, 如果不为空, 再判断flag是否为true, 如果为true, 表示token更新过.
-func VerifyAndRenewToken(tokenStr string, privateKey *ecdsa.PrivateKey) (tokenObj *Token, err error, flag bool) {
+func VerifyAndRenewToken(tokenStr string, privateKey *ecdsa.PrivateKey) (tokenObj *Token, err error) {
 	parser := new(Parser)
 	parser.ValidMethods = []string{"ES256"}
 	tokenObj, err = parser.Parse(tokenStr, &privateKey.PublicKey)
 	if err != nil {
-		return tokenObj, err, false
+		return tokenObj, err
 	}
-	return tokenObj, nil, flag
+	return tokenObj, nil
 }

@@ -13,7 +13,7 @@ import (
 // 初始化ws的路由表
 func (h *HttpServer) initRoutes(ws *restful.WebService) {
 	// websocket
-	ws.Route(ws.GET("/websocket").Filter(h.tokenFilter).To(panicHandle(h.websocketHandel)))
+	ws.Route(ws.GET("/websocket").Filter(h.testTokenFilter).To(panicHandle(h.websocketHandel)))
 }
 
 //拦截请求中的未知panic

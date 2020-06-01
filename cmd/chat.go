@@ -15,6 +15,4 @@ func (HttpServer) websocketHandel(request *restful.Request, response *restful.Re
 	if node == nil {
 		return
 	}
-
-	//go manager.HeartBeating(node) //心跳协程
 }
