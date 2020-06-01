@@ -88,7 +88,6 @@ func (m *ConnectManager) isMax() bool {
 func (m *ConnectManager) Add(id int64, conn *websocket.Conn) *Node {
 	//如果有未释放的资源则释放资源
 	m.ifConnectedThanRemove(id)
-
 	//再次判断当前连接数是否已满
 	if manager.currentConnect >= manager.MaxConnect {
 		return nil
@@ -119,7 +118,6 @@ func (m *ConnectManager) Add(id int64, conn *websocket.Conn) *Node {
 			Receiver(node) //闭包
 
 		})
-
 	}); err != nil {
 		return nil
 	}

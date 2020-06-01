@@ -38,5 +38,5 @@
     MaxConnect = 1024  #单机最大连接数可通过设置系统进程最大打开文件符数量
 
 [mq]
-    AmqpAddr="amqp://guest:guest@127.0.0.1:5672/"  #rabbitmq addr
+    AmqpAddr="amqp://yann:asd12300@127.0.0.1:5672/"  #rabbitmq addr
     ExchangeName="chicha:fanout:chat:message"    #交换机名称
