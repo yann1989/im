@@ -4,6 +4,6 @@
 
 package common
 
-import "errors"
+import "fmt"
 
-var ERR_BAD_REQUES = errors.New("用户传递的数据为空,格式不正确或者参数错误")
+var ERR_BAD_REQUES = fmt.Errorf("用户传递的数据为空,格式不正确或者参数错误")

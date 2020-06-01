@@ -10,7 +10,6 @@ import (
 	"syscall"
 	"time"
 	chat "yann-chat"
-	"yann-chat/common"
 	"yann-chat/tools/conf"
 	"yann-chat/tools/ip"
 	"yann-chat/tools/log"
@@ -142,7 +141,6 @@ func shutdown() {
 		log.Info("chat-service get a signal %s", s.String())
 		switch s {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
-			common.IsClose = true
 			time.Sleep(time.Second * 2)
 			if err = yannChat.Stop(context.Background()); err != nil {
 				log.Error("服务退出异常: %v", err)

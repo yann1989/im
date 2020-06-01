@@ -17,5 +17,3 @@ const (
 const (
 	USER_ONLINE = iota + 1
 )
-
-var IsClose = false
