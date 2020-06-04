@@ -9,7 +9,7 @@ import (
 	"yann-chat/manager"
 	"yann-chat/tools/dao/mysqlClient"
 	"yann-chat/tools/dao/redisClient"
-	"yann-chat/tools/log"
+	"yann-chat/tools/logger"
 	"yann-chat/tools/mq"
 	"yann-chat/tools/snowflake"
 	"yann-chat/tools/web"
@@ -18,7 +18,7 @@ import (
 // Config 服务配置总控-对应配置文件所有的配置信息
 type Config struct {
 	// 日志
-	Log *log.Config `toml:"log"`
+	Logger *logger.LoggerConfig `toml:"log"`
 	// 数据层配置
 	Dao *DaoConfig `toml:"dao"`
 	// web

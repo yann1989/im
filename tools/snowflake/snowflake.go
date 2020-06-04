@@ -7,10 +7,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 	chat "yann-chat"
-	"yann-chat/tools/log"
 )
 
 type SnowConfig struct {
@@ -45,15 +45,15 @@ func (s *SnowConfig) Start(ctx context.Context, yannChat *chat.YannChat) error {
 	once.Do(func() {
 		idWordker = new(IdWorker)
 		if err := idWordker.initIdWorker(s.WorkerId, s.DatacenterId); err != nil {
-			log.Error("雪花id初始化失败:%s", err.Error())
+			logrus.Errorf("雪花id初始化失败:%s", err.Error())
 		}
-		log.Info("snowflake[%d:%d] 初始化完成", s.WorkerId, s.DatacenterId)
+		logrus.Infof("snowflake[%d:%d] 初始化完成", s.WorkerId, s.DatacenterId)
 	})
 	return nil
 }
 
 func (s *SnowConfig) Stop(ctx context.Context) error {
-	log.Info("snowflake 已关闭")
+	logrus.Infof("snowflake 已关闭")
 	return nil
 }
 

@@ -10,7 +10,6 @@ import (
 )
 
 func (HttpServer) websocketHandel(request *restful.Request, response *restful.Response) {
-
 	node := manager.Accept(request, response)
 	if node == nil {
 		return

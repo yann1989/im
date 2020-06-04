@@ -7,9 +7,9 @@ import (
 	"context"
 	"errors"
 	redigo "github.com/gomodule/redigo/redis"
+	"github.com/sirupsen/logrus"
 	"sync"
 	chat "yann-chat"
-	"yann-chat/tools/log"
 )
 
 type RedisConfig struct {
@@ -47,7 +47,7 @@ func (r *RedisConfig) Start(ctx context.Context, yannChat *chat.YannChat) error 
 			}
 			return
 		}, r.Size)
-		log.Info("redis %s 已启动", r.Addr)
+		logrus.Infof("redis %s 已启动", r.Addr)
 	})
 	return nil
 }
@@ -55,8 +55,8 @@ func (r *RedisConfig) Start(ctx context.Context, yannChat *chat.YannChat) error 
 func (r *RedisConfig) Stop(ctx context.Context) (err error) {
 	err = redispool.Close()
 	if err != nil {
-		log.Error("redis 关闭异常: %s", err.Error())
+		logrus.Errorf("redis 关闭异常: %s", err.Error())
 	}
-	log.Info("redis 已关闭")
+	logrus.Infof("redis 已关闭")
 	return
 }

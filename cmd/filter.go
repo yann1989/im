@@ -6,11 +6,11 @@ package main
 
 import (
 	"github.com/emicklei/go-restful"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"time"
 	"yann-chat/manager"
 	"yann-chat/tools/jwt"
-	"yann-chat/tools/log"
 	"yann-chat/tools/view"
 )
 
@@ -22,7 +22,7 @@ func (h *HttpServer) tokenFilter(req *restful.Request, resp *restful.Response, c
 		return
 	}
 	// 校验成功，继续
-	log.Info("时间:%s--请求来自:%s--用户ID:%d", time.Now().String(), req.Request.RemoteAddr, jwtToken.Claims.UserId)
+	logrus.Infof("时间:%s--请求来自:%s--用户ID:%d", time.Now().String(), req.Request.RemoteAddr, jwtToken.Claims.UserId)
 	req.SetAttribute("uid", jwtToken.Claims.UserId)
 	chain.ProcessFilter(req, resp)
 }
@@ -36,7 +36,7 @@ func (h *HttpServer) testTokenFilter(req *restful.Request, resp *restful.Respons
 		return
 	}
 	// 校验成功，继续
-	log.Info("时间:%s--请求来自:%s--用户ID:%d", time.Now().String(), req.Request.RemoteAddr, uid)
+	logrus.Infof("时间:%s--请求来自:%s--用户ID:%d", time.Now().String(), req.Request.RemoteAddr, uid)
 	req.SetAttribute("uid", uid)
 	chain.ProcessFilter(req, resp)
 }

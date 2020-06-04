@@ -3,10 +3,8 @@
     owner = "yann"
 
 [log]
-    # rsyslog server's ip+port
-    rsyslogAddress = "192.168.1.201:10086"
-    # 输出日志到控制台
-    stdout = true
+    # log level  0 - 6
+    Level = 6
 
 # Web层配置
 [web]

@@ -5,8 +5,8 @@
 package manager
 
 import (
+	"github.com/sirupsen/logrus"
 	"time"
-	"yann-chat/tools/log"
 )
 
 func Receiver(node *Node) {
@@ -16,15 +16,15 @@ func Receiver(node *Node) {
 	}
 	_, data, err := node.Conn.ReadMessage()
 	if err != nil {
-		log.Error(err.Error())
+		logrus.Errorf(err.Error())
 		return
 	}
-	log.Info("读取到消息: %s", string(data))
+	logrus.Infof("读取到消息: %s", string(data))
 
 	//node.HeartCh <- HEART_CHAN
 	//把消息广播到局域网
 	if err = NewBroadcaster(data).Execute(); err != nil {
-		log.Error("广播消息失败: %s", err.Error())
+		logrus.Errorf("广播消息失败: %s", err.Error())
 	}
 	return
 }

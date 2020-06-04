@@ -5,6 +5,7 @@
 package manager
 
 import (
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"time"
 	"yann-chat/common"
@@ -34,7 +35,7 @@ func (b *broadcast) Execute() error {
 	//获取消息
 	var err error
 	message := new(model.Message)
-	if err = utils.JsonUnMarshal(b.jsonData, message); err != nil {
+	if err = json.Unmarshal(b.jsonData, message); err != nil {
 		return common.ERR_BAD_REQUES
 	}
 	if message.MsgType == 0 || message.CreateTime == 0 {

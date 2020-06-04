@@ -7,6 +7,8 @@ package main
 import (
 	"context"
 	"crypto/ecdsa"
+	"github.com/emicklei/go-restful"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -14,9 +16,6 @@ import (
 	"yann-chat/tools/conf"
 	"yann-chat/tools/ip"
 	"yann-chat/tools/jwt"
-	"yann-chat/tools/log"
-
-	"github.com/emicklei/go-restful"
 )
 
 type HttpServer struct {
@@ -57,7 +56,7 @@ func NewHttpServer(config *conf.Config) (httpServer *HttpServer) {
 	privateKeyBytes, err := ioutil.ReadFile(config.Web.KeyPath)
 	priKey, err := jwt.ParseECPrivateKeyFromPEM(privateKeyBytes)
 	if err != nil {
-		log.Error("注册web服务失败: %v", err)
+		logrus.Errorf("注册web服务失败: %v", err)
 		panic(err)
 	}
 
@@ -100,7 +99,7 @@ func (h *HttpServer) Start(ctx context.Context, yannChat *chat.YannChat) error {
 		go func() {
 			// returns ErrServerClosed on graceful shutdown(i.e. call service.Shutdown())
 			if err := h.server.ListenAndServeTLS(h.certPath, h.keyPath); err != http.ErrServerClosed {
-				log.Error("ListenAndServeTLS error: %v", err)
+				logrus.Errorf("ListenAndServeTLS error: %v", err)
 				panic("web层启动异常")
 			}
 		}()
@@ -108,12 +107,12 @@ func (h *HttpServer) Start(ctx context.Context, yannChat *chat.YannChat) error {
 		go func() {
 			// returns ErrServerClosed on graceful shutdown(i.e. call service.Shutdown())
 			if err := http.ListenAndServe(h.server.Addr, h.Container); err != http.ErrServerClosed {
-				log.Error("ListenAndServe error: %v", err)
+				logrus.Errorf("ListenAndServe error: %v", err)
 				panic("web层启动异常")
 			}
 		}()
 	default:
-		log.Error("无法识别协议: %s", h.proto)
+		logrus.Errorf("无法识别协议: %s", h.proto)
 		panic("无法识别协议, 请检查配置")
 	}
 
@@ -124,8 +123,8 @@ func (h *HttpServer) Start(ctx context.Context, yannChat *chat.YannChat) error {
 func (h *HttpServer) Stop(ctx context.Context) (err error) {
 	// 关闭http service
 	if err = h.server.Shutdown(ctx); err != nil {
-		log.Error("web层关闭异常: %v", err)
+		logrus.Errorf("web层关闭异常: %v", err)
 	}
-	log.Info("web 服务已关闭")
+	logrus.Infof("web 服务已关闭")
 	return
 }

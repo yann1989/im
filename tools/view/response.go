@@ -6,8 +6,8 @@ package view
 
 import (
 	"github.com/emicklei/go-restful"
+	"github.com/sirupsen/logrus"
 	"time"
-	"yann-chat/tools/log"
 )
 
 // 响应前端的固定格式
@@ -45,6 +45,6 @@ func (r *Response) ReturnResult(request *restful.Request, response *restful.Resp
 	response.ResponseWriter.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	response.ResponseWriter.Header().Set("Access-Control-Allow-Headers", "Lang, Authorization")
 	if err := response.WriteAsJson(r); err != nil {
-		log.Error("%s返回结果失败", request.Request.URL.Path)
+		logrus.Errorf("%s返回结果失败", request.Request.URL.Path)
 	}
 }

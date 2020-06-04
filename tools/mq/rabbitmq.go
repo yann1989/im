@@ -6,10 +6,10 @@ package mq
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 	"sync"
 	chat "yann-chat"
-	"yann-chat/tools/log"
 )
 
 type Config struct {
@@ -34,7 +34,7 @@ var (
 //初始化参数
 func (c *Config) initParam() {
 	if c.ExchangeName == "" {
-		log.Error("启动失败,请初始化mq交换机名称")
+		logrus.Errorf("启动失败,请初始化mq交换机名称")
 		panic("请初始化mq交换机名称")
 	}
 	if c.AmqpAddr == "" {
@@ -48,22 +48,22 @@ func (c *Config) Start(ctx context.Context, yannChat *chat.YannChat) error {
 		var err error
 		amqpProducer, err = amqp.Dial(c.AmqpAddr)
 		if err != nil {
-			log.Error("amqp 初始化失败, 失败原因:%s", err.Error())
+			logrus.Errorf("amqp 初始化失败, 失败原因:%s", err.Error())
 			panic("amqp 初始化失败, 失败原因:%s" + err.Error())
 		}
 		amqpConsumer, err = amqp.Dial(c.AmqpAddr)
 		if err != nil {
-			log.Error("amqp 初始化失败, 失败原因:%s", err.Error())
+			logrus.Errorf("amqp 初始化失败, 失败原因:%s", err.Error())
 			panic("amqp 初始化失败, 失败原因:%s" + err.Error())
 		}
 		chProducer, err = amqpProducer.Channel()
 		if err != nil {
-			log.Error("amqp 初始化channel失败, 失败原因:%s", err.Error())
+			logrus.Errorf("amqp 初始化channel失败, 失败原因:%s", err.Error())
 			panic("amqp 初始化channel失败, 失败原因:%s" + err.Error())
 		}
 		chConsumer, err = amqpProducer.Channel()
 		if err != nil {
-			log.Error("amqp 初始化channel失败, 失败原因:%s", err.Error())
+			logrus.Errorf("amqp 初始化channel失败, 失败原因:%s", err.Error())
 			panic("amqp 初始化channel失败, 失败原因:%s" + err.Error())
 		}
 		//申明生产者交换机
@@ -77,7 +77,7 @@ func (c *Config) Start(ctx context.Context, yannChat *chat.YannChat) error {
 			nil,
 		)
 		if err != nil {
-			log.Error("amqp 初始化chProducer Exchange失败, 失败原因:%s", err.Error())
+			logrus.Errorf("amqp 初始化chProducer Exchange失败, 失败原因:%s", err.Error())
 			panic("amqp 初始化Exchange失败, 失败原因:%s" + err.Error())
 		}
 		//申明消费者交换机
@@ -91,7 +91,7 @@ func (c *Config) Start(ctx context.Context, yannChat *chat.YannChat) error {
 			nil,
 		)
 		if err != nil {
-			log.Error("amqp 初始化chConsumer Exchange失败, 失败原因:%s", err.Error())
+			logrus.Errorf("amqp 初始化chConsumer Exchange失败, 失败原因:%s", err.Error())
 			panic("amqp 初始化Exchange失败, 失败原因:%s" + err.Error())
 		}
 		exchangeName = c.ExchangeName
@@ -121,7 +121,7 @@ func StartConsume() (<-chan amqp.Delivery, error) {
 		nil,
 	)
 	if err != nil {
-		log.Error("amqp chConsumer 声明Queue失败, 失败原因:%s", err.Error())
+		logrus.Errorf("amqp chConsumer 声明Queue失败, 失败原因:%s", err.Error())
 		panic("amqp chConsumer 声明Queue失败, 失败原因:%s" + err.Error())
 	}
 	err = chConsumer.QueueBind(
@@ -132,7 +132,7 @@ func StartConsume() (<-chan amqp.Delivery, error) {
 		nil,
 	)
 	if err != nil {
-		log.Error("amqp chConsumer 绑定Queue失败, 失败原因:%s", err.Error())
+		logrus.Errorf("amqp chConsumer 绑定Queue失败, 失败原因:%s", err.Error())
 		panic("amqp chConsumer 绑定Queue失败Queue失败, 失败原因:%s" + err.Error())
 	}
 
@@ -150,7 +150,7 @@ func StartConsume() (<-chan amqp.Delivery, error) {
 func (c *Config) Stop(ctx context.Context) (err error) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Error("mq 关闭异常")
+			logrus.Errorf("mq 关闭异常")
 		}
 	}()
 	amqpProducer.Close()

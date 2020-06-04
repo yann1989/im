@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/mailru/easygo/netpoll"
+	"github.com/sirupsen/logrus"
 	"sync"
 	chat "yann-chat"
-	"yann-chat/tools/log"
 )
 
 type ConnectManager struct {
@@ -31,7 +31,7 @@ var (
 func (m *ConnectManager) verifyParam() {
 	if m.MaxConnect <= 0 {
 		err := fmt.Sprintf("客户端管理参数错误 MaxConnect = %d, 请检查配置", m.MaxConnect)
-		log.Error(err)
+		logrus.Errorf(err)
 		panic(err)
 	}
 }
@@ -48,12 +48,12 @@ func (m *ConnectManager) Start(ctx context.Context, yannChat *chat.YannChat) err
 		var err error
 		manager.poller, err = netpoll.New(nil)
 		if err != nil {
-			log.Error("init poller faild:", err.Error())
+			logrus.Errorf("init poller faild:", err.Error())
 			panic("init poller faild:" + err.Error())
 		}
 		manager.gopool = NewPool(GOROUTING_MAX_LEN, TASK_MAX_LEN, GOROUTING_INIT_LEN)
 		go m.startConsume()
-		log.Info("connect manager[max_connect:%d] 初始化完成", manager.MaxConnect)
+		logrus.Infof("connect manager[max_connect:%d] 初始化完成", manager.MaxConnect)
 	})
 	return nil
 }
@@ -68,7 +68,7 @@ func (m *ConnectManager) Stop(ctx context.Context) error {
 	for key, _ := range manager.nodes {
 		manager.Remove(key)
 	}
-	log.Info("websocket所有连接 已关闭")
+	logrus.Infof("websocket所有连接 已关闭")
 	return nil
 }
 
@@ -102,13 +102,13 @@ func (m *ConnectManager) Add(id int64, conn *websocket.Conn) *Node {
 		if ev&(netpoll.EventReadHup|netpoll.EventHup) != 0 {
 			defer func() {
 				if err := recover(); err != nil {
-					log.Error("eof 释放资源panic: %s", err)
+					logrus.Errorf("eof 释放资源panic: %s", err)
 				}
 			}()
 			m.Remove(id) //闭包
 		}
 
-		log.Info("读事件触发")
+		logrus.Infof("读事件触发")
 		manager.gopool.Schedule(func() {
 			defer func() {
 				if err := recover(); err != nil {
@@ -146,7 +146,7 @@ func (m *ConnectManager) Remove(id int64) {
 	if node, has := manager.nodes[id]; has {
 		err := manager.poller.Stop(node.fd)
 		if err != nil {
-			log.Error("关闭连接失败: %S", err)
+			logrus.Errorf("关闭连接失败: %S", err)
 		}
 		delete(manager.nodes, id)
 		manager.currentConnect--

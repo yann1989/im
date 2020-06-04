@@ -7,10 +7,10 @@ import (
 	"context"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 	chat "yann-chat"
-	"yann-chat/tools/log"
 )
 
 type MysqlConfig struct {
@@ -46,7 +46,7 @@ func (m *MysqlConfig) Start(ctx context.Context, yannChat *chat.YannChat) error 
 				DbApp = DbApp.Debug()
 			}
 		}
-		log.Info("mysql %s已启动", m.DSNAPP)
+		logrus.Infof("mysql %s已启动", m.DSNAPP)
 
 		if m.DSNADMIN != "" {
 			DbAdmin, err = gorm.Open("mysql", m.DSNADMIN)
@@ -60,23 +60,23 @@ func (m *MysqlConfig) Start(ctx context.Context, yannChat *chat.YannChat) error 
 				DbAdmin = DbAdmin.Debug()
 			}
 		}
-		log.Info("mysql %s已启动", m.DSNADMIN)
+		logrus.Infof("mysql %s已启动", m.DSNADMIN)
 	})
-	log.Info("mysql 数据库已启动")
+	logrus.Infof("mysql 数据库已启动")
 	return nil
 }
 
 func (m *MysqlConfig) Stop(ctx context.Context) (err error) {
 	err = DbApp.Close()
 	if err != nil {
-		log.Error("mysql db_app 关闭异常: %s", err.Error())
+		logrus.Errorf("mysql db_app 关闭异常: %s", err.Error())
 		return
 	}
 	err = DbApp.Close()
 	if err != nil {
-		log.Error("mysql db_admin 关闭异常: %s", err.Error())
+		logrus.Errorf("mysql db_admin 关闭异常: %s", err.Error())
 		return
 	}
-	log.Info("mysql 数据库已关闭")
+	logrus.Infof("mysql 数据库已关闭")
 	return
 }

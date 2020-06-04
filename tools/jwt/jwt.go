@@ -9,10 +9,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"time"
-	"yann-chat/tools/log"
 )
 
 // TimeFunc provides the current time when parsing token to validate "exp" claim (expiration time).
@@ -65,10 +65,10 @@ func (t *Token) Renew(privateKey *ecdsa.PrivateKey) (flag bool) {
 	jwtToken, err := parser.Parse(t.Raw, &privateKey.PublicKey)
 	//fmt.Println("过期时间:", jwtToken.Claims.ExpiresAt)
 	if err != nil {
-		log.Error(err.Error())
+		logrus.Errorf(err.Error())
 	}
 	if jwtToken == nil {
-		log.Error("jwt is nil")
+		logrus.Errorf("jwt is nil")
 	} else {
 		if jwtToken.Claims.NotBefore < time.Now().Unix() && jwtToken.Claims.ExpiresAt-time.Now().Unix() < int64(
 			RenewTime/1e9) {

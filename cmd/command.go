@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
@@ -11,8 +12,8 @@ import (
 	"time"
 	chat "yann-chat"
 	"yann-chat/tools/conf"
-	"yann-chat/tools/ip"
-	"yann-chat/tools/log"
+	"yann-chat/tools/logger"
+	file_log "yann-chat/tools/logger/file-log"
 )
 
 // package-private vars
@@ -83,22 +84,25 @@ func entryPoint(_ *cobra.Command, _ []string) {
 		panic(err)
 	}
 
+	file_log.InitLog()
+	logger.InitLogger(config.Logger)
+
 	// 构建Taurus
 	value := context.WithValue(context.Background(), "conf", config)
 	if err = yannChat.Build(value); err != nil {
-		log.Error("Building Taurus failed, please check the startup settings. err: %s", err.Error())
+		logrus.Errorf("Building Taurus failed, please check the startup settings. err: %s", err.Error())
 		panic(err)
 	}
 
 	// 启动
 	if err = yannChat.Start(value); err != nil {
-		log.Error("Launching Taurus failed, please check the startup settings. err: %s", err.Error())
+		logrus.Errorf("Launching Taurus failed, please check the startup settings. err: %s", err.Error())
 		panic(err)
 	}
 
 	// 启动时间日志记录
-	log.Info("chat-service starts at %s", config.Web.Address)
-	log.Info("启动时间=>[%s]", time.Now().Format("2006-01-02 15:04:05"))
+	logrus.Infof("chat-service starts at %s", config.Web.Address)
+	logrus.Infof("启动时间=>[%s]", time.Now().Format("2006-01-02 15:04:05"))
 
 	// Service Shutdown
 	shutdown()
@@ -125,10 +129,6 @@ func loadConfig() {
 		fmt.Println("Failed to parse the configuration file, please check the configuration file")
 		os.Exit(-1)
 	}
-
-	// init log
-	config.Log.ServiceAddress = ip.InternalIP()
-	log.Init(config.Log)
 }
 
 // 服务停止
@@ -138,14 +138,14 @@ func shutdown() {
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 	for {
 		s := <-c
-		log.Info("chat-service get a signal %s", s.String())
+		logrus.Infof("chat-service get a signal %s", s.String())
 		switch s {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
 			time.Sleep(time.Second * 2)
 			if err = yannChat.Stop(context.Background()); err != nil {
-				log.Error("服务退出异常: %v", err)
+				logrus.Errorf("服务退出异常: %v", err)
 			}
-			log.Info("服务结束运行")
+			logrus.Infof("服务结束运行")
 			return
 		case syscall.SIGHUP:
 		default:

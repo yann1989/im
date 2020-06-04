@@ -7,10 +7,10 @@ package manager
 import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
+	"github.com/sirupsen/logrus"
 	"time"
 	"yann-chat/common"
 	"yann-chat/model"
-	"yann-chat/tools/log"
 	"yann-chat/tools/mq"
 	"yann-chat/tools/utils"
 )
@@ -19,7 +19,7 @@ import (
 func (m *ConnectManager) startConsume() {
 	msgs, err := mq.StartConsume()
 	if err != nil {
-		log.Error("amqp 开始消费失败, 失败原因:%s", err.Error())
+		logrus.Errorf("amqp 开始消费失败, 失败原因:%s", err.Error())
 		panic("amqp 开始消费失败, 失败原因:%s" + err.Error())
 	}
 	for msg := range msgs {
@@ -27,7 +27,7 @@ func (m *ConnectManager) startConsume() {
 			m.dispatch(msg.Body)
 		})
 	}
-	log.Info("退出conusme")
+	logrus.Infof("退出conusme")
 }
 
 //分发消息
@@ -36,7 +36,7 @@ func (m *ConnectManager) dispatch(data []byte) {
 	msg := new(model.Message)
 	err := json.Unmarshal(data, msg)
 	if err != nil {
-		log.Error("消息格式有误, json序列化失败: %s", err.Error())
+		logrus.Errorf("消息格式有误, json序列化失败: %s", err.Error())
 		return
 	}
 

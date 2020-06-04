@@ -9,8 +9,8 @@ import (
 	"github.com/emicklei/go-restful"
 	"github.com/gorilla/websocket"
 	"github.com/mailru/easygo/netpoll"
+	"github.com/sirupsen/logrus"
 	"net/http"
-	"yann-chat/tools/log"
 	"yann-chat/tools/view"
 )
 
@@ -49,7 +49,7 @@ func Accept(request *restful.Request, response *restful.Response) *Node {
 		},
 	}).Upgrade(response.ResponseWriter, request.Request, nil)
 	if err != nil {
-		log.Error("用户 %d 建立websocket失败: ", uid)
+		logrus.Errorf("用户 %d 建立websocket失败: ", uid)
 		return nil
 	}
 
