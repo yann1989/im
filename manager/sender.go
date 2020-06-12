@@ -57,8 +57,12 @@ func (m *ConnectManager) dispatch(data []byte) {
 	//群聊  可以通过redis获取群成员(遍历群成员) 也可以通过在用户建立连接的时候每个节点上维护一个此用户加入的所有群聊(遍历所有节点)
 	case common.MSG_TYPE_GROUP:
 		//1.获取群成员
-		list := utils.RedisUtils.SmembersInt64(utils.RedisUtils.BuildKey(common.REDIS_KEY_GROUP_MEMBER_PREFIX, msg.ToID))
-		if list == nil {
+		list, err := utils.RedisUtils.SmembersInt64(utils.RedisUtils.BuildKey(common.REDIS_KEY_GROUP_MEMBER_PREFIX, msg.ToID))
+		if err != nil {
+			logrus.Errorf(err.Error())
+			return
+		}
+		if list == nil || len(list) <= 0 {
 			return
 		}
 

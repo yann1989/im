@@ -5,9 +5,13 @@
 package utils
 
 import (
-	"github.com/gomodule/redigo/redis"
+	"errors"
+	"github.com/go-redis/redis/v7"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
-	"strings"
+	"reflect"
+	"strconv"
+	"time"
 	"yann-chat/common"
 	"yann-chat/tools/dao/redisClient"
 )
@@ -18,103 +22,203 @@ var RedisUtils = redisUtils{}
 
 // 通过key获取string
 func (redisUtils) GetStringByKey(key string) string {
-	// 连接redis
-	value, err := redis.String(redisClient.GetClient().Do("GET", key))
+	args := []interface{}{}
+	args = append(args, "GET")
+	args = append(args, key)
+	cmd := redis.NewStringCmd(args...)
+	var err error
+	if redisClient.IsCluster {
+		err = redisClient.ClusterClient.Process(cmd)
+	} else {
+		err = redisClient.Client.Process(cmd)
+	}
 	if err != nil {
+		logrus.Errorf("redis GET error: %s", err.Error())
 		return ""
 	}
-	return value
+	result, err := cmd.Result()
+	if err != nil {
+		logrus.Errorf("redis GET error: %s", err.Error())
+		return ""
+	}
+	return result
 }
 
 // 自增返回当前数字
-func (redisUtils) IncrRedisByKeyAndGetValue(key string) (int, error) {
-	return redis.Int(redisClient.GetClient().Do("INCR", key))
+func (redisUtils) IncrRedisByKeyAndGetValue(key string) int64 {
+	args := []interface{}{}
+	args = append(args, "INCR")
+	args = append(args, key)
+	cmd := redis.NewIntCmd(args...)
+	var err error
+	if redisClient.IsCluster {
+		err = redisClient.ClusterClient.Process(cmd)
+	} else {
+		err = redisClient.Client.Process(cmd)
+	}
+	if err != nil {
+		logrus.Errorf("redis GET error: %s", err.Error())
+		return -1
+	}
+	num, err := cmd.Result()
+	if err != nil {
+		logrus.Errorf("redis INCR error: %s", err.Error())
+		return -1
+	}
+	return num
 }
 
 // 设置string
 func (redisUtils) SetStringByKey(key string, value interface{}, time int) error {
-	// 连接redis
-	var err error
-	if time == 0 { // 设置不过期key
-		_, err = redisClient.GetClient().Do("SET", key, value)
-	} else {
-		_, err = redisClient.GetClient().Do("SET", key, value, "EX", time)
+	args := []interface{}{}
+	args = append(args, "SET")
+	args = append(args, key)
+	args = append(args, value)
+	if time > 0 {
+		args = append(args, "EX")
+		args = append(args, time)
 	}
-	return err
+
+	if redisClient.IsCluster {
+		return redisClient.ClusterClient.Do(args...).Err()
+	}
+	return redisClient.Client.Do(args...).Err()
+
 }
 
 // 删除
 func (redisUtils) DelByKey(key string) error {
-	_, err := redisClient.GetClient().Do("DEL", key)
-	return err
+	args := []interface{}{}
+	args = append(args, "DEL")
+	args = append(args, key)
+
+	if redisClient.IsCluster {
+		return redisClient.ClusterClient.Do(args...).Err()
+	}
+	return redisClient.Client.Do(args...).Err()
 }
 
 // redis SADD  set集合添加元素
 func (redisUtils) Sadd(key string, args ...interface{}) error {
-	arr := []interface{}{key}
-	for _, value := range args {
-		arr = append(arr, value)
+	tempArgs := []interface{}{}
+	tempArgs = append(tempArgs, "SADD")
+	tempArgs = append(tempArgs, key)
+	tempArgs = append(tempArgs, args...)
+	if redisClient.IsCluster {
+		return redisClient.ClusterClient.Do(tempArgs...).Err()
 	}
-	_, err := redisClient.GetClient().Do("SADD", arr...)
-	return err
+	return redisClient.Client.Do(tempArgs...).Err()
 }
 
 // redis Srem  set移除元素
 func (redisUtils) Srem(key string, args ...interface{}) error {
-	arr := []interface{}{key}
-	for _, value := range args {
-		arr = append(arr, value)
+	tempArgs := []interface{}{}
+	tempArgs = append(tempArgs, "SREM")
+	tempArgs = append(tempArgs, key)
+	tempArgs = append(tempArgs, args...)
+	if redisClient.IsCluster {
+		return redisClient.ClusterClient.Do(tempArgs...).Err()
 	}
-	_, err := redisClient.GetClient().Do("SREM", arr...)
-	return err
+	return redisClient.Client.Do(tempArgs...).Err()
 }
 
 // redis Smembers 获取set中所有元素
-func (redisUtils) SmembersInt64(key interface{}) []int64 {
-	list, err := redis.Int64s(redisClient.GetClient().Do("SMEMBERS", key))
-	if err != nil {
-		return nil
+func (redisUtils) SmembersInt64(key interface{}) ([]int64, error) {
+	tempArgs := []interface{}{}
+	tempArgs = append(tempArgs, "SMEMBERS")
+	tempArgs = append(tempArgs, key)
+	cmd := redis.NewStringSliceCmd(tempArgs...)
+	var err error
+	if redisClient.IsCluster {
+		err = redisClient.ClusterClient.Process(cmd)
+	} else {
+		err = redisClient.Client.Process(cmd)
 	}
-	return list
+	if err != nil {
+		return nil, err
+	}
+	//result, err := cmd.Result()
+	array := []int64{}
+
+	//for _, str := range result {
+	//	int64Num, _ := strconv.ParseInt(str, 10, 64)
+	//	if int64Num != 0 {
+	//		array = append(array, int64Num)
+	//	}
+	//}
+	return array, cmd.ScanSlice(&array)
 }
 
 // redis Smembers 获取set中所有元素
 func (redisUtils) SmembersString(key interface{}) ([]string, error) {
-	return redis.Strings(redisClient.GetClient().Do("SMEMBERS", key))
+	tempArgs := []interface{}{}
+	tempArgs = append(tempArgs, "SMEMBERS")
+	tempArgs = append(tempArgs, key)
+	cmd := redis.NewStringSliceCmd(tempArgs...)
+	var err error
+	if redisClient.IsCluster {
+		err = redisClient.ClusterClient.Process(cmd)
+	} else {
+		err = redisClient.Client.Process(cmd)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return cmd.Result()
 }
 
 // redis hash类型设置,设置单个字段
 func (redisUtils) Hset(key string, field, value interface{}) error {
-	_, err := redisClient.GetClient().Do("HSET", key, field, value)
-	return err
+	tempArgs := []interface{}{}
+	tempArgs = append(tempArgs, "HSET")
+	tempArgs = append(tempArgs, key)
+	tempArgs = append(tempArgs, field)
+	tempArgs = append(tempArgs, value)
+	if redisClient.IsCluster {
+		return redisClient.ClusterClient.Do(tempArgs...).Err()
+	}
+	return redisClient.Client.Do(tempArgs...).Err()
 }
 
 // redis hash类型设置,批量设置字段
 func (redisUtils) Hmset(key string, data interface{}) error {
-	_, err := redisClient.GetClient().Do("HMSET", redis.Args{}.Add(key).AddFlat(data)...)
-	return err
+	if redisClient.IsCluster {
+		return redisClient.ClusterClient.HMSet(key, struct2Map(data)).Err()
+	}
+	return redisClient.Client.HMSet(key, struct2Map(data)).Err()
 }
 
-// redis hash类型值获取
-func (redisUtils) HgetAll(key string) (map[string]interface{}, error) {
+func struct2Map(i interface{}) map[string]interface{} {
 	m := make(map[string]interface{})
-	value, err := redis.Strings(redisClient.GetClient().Do("HGETALL", key))
-	if err != nil {
-		return m, err
+	elem := reflect.ValueOf(i).Elem()
+	relType := elem.Type()
+	for i := 0; i < relType.NumField(); i++ {
+		m[relType.Field(i).Name] = elem.Field(i).Interface()
 	}
-	for k, v := range value {
-		if k%2 == 0 { // 如果是偶数,则是key,反之是value
-			m[v] = value[k+1]
-		}
-	}
-	return m, nil
+	return m
 }
 
-// 获取hash里单个值
-func (redisUtils) Hget(key, field string) (string, error) {
-	value, err := redis.String(redisClient.GetClient().Do("HGET", key, field))
-	return value, err
-}
+//
+//// redis hash类型值获取
+//func (redisUtils) HgetAll(key string) (map[string]interface{}, error) {
+//	m := make(map[string]interface{})
+//	value, err := redis.Strings(redisClient.GetClient().Do("HGETALL", key))
+//	if err != nil {
+//		return m, err
+//	}
+//	for k, v := range value {
+//		if k%2 == 0 { // 如果是偶数,则是key,反之是value
+//			m[v] = value[k+1]
+//		}
+//	}
+//	return m, nil
+//}
+//
+//// 获取hash里单个值
+//func (redisUtils) Hget(key, field string) (string, error) {
+//	value, err := redis.String(redisClient.GetClient().Do("HGET", key, field))
+//	return value, err
+//}
 
 //***************************************************
 //Description : 获取redis hash类型所有字段
@@ -123,109 +227,165 @@ func (redisUtils) Hget(key, field string) (string, error) {
 //return :      错误信息
 //***************************************************
 func (redisUtils) HgetAll2Struct(key string, i interface{}) error {
-	value, err := redis.Values(redisClient.GetClient().Do("HGETALL", key))
+	var cmd *redis.StringStringMapCmd = nil
+	if redisClient.IsCluster {
+		cmd = redisClient.ClusterClient.HGetAll(key)
+	} else {
+		cmd = redisClient.Client.HGetAll(key)
+	}
+
+	result, err := cmd.Result()
 	if err != nil {
 		return err
 	}
-	return redis.ScanStruct(value, i)
+
+	elem := reflect.ValueOf(i).Elem()
+	relType := elem.Type()
+	for i := 0; i < relType.NumField(); i++ {
+		if value, ok := result[relType.Field(i).Name]; ok {
+			conversion, err := typeConversion(elem.Field(i).Type().Name(), value)
+			if err != nil {
+				continue
+			}
+			elem.Field(i).Set(conversion)
+		}
+	}
+	return nil
 }
 
+func typeConversion(typeName, value string) (reflect.Value, error) {
+	switch typeName {
+	case "string":
+		return reflect.ValueOf(value), nil
+	case "time.Time":
+		t, err := time.ParseInLocation("2006-01-02 15:04:05", value, time.Local)
+		return reflect.ValueOf(t), err
+	case "Time":
+		t, err := time.ParseInLocation("2006-01-02 15:04:05", value, time.Local)
+		return reflect.ValueOf(t), err
+	case "int":
+		i, err := strconv.Atoi(value)
+		return reflect.ValueOf(i), err
+	case "int8":
+		i, err := strconv.ParseInt(value, 10, 64)
+		return reflect.ValueOf(int8(i)), err
+	case "int32":
+		i, err := strconv.ParseInt(value, 10, 64)
+		return reflect.ValueOf(int32(i)), err
+	case "int64":
+		i, err := strconv.ParseInt(value, 10, 64)
+		return reflect.ValueOf(i), err
+	case "float32":
+		i, err := strconv.ParseFloat(value, 64)
+		return reflect.ValueOf(float32(i)), err
+	case "float64":
+		i, err := strconv.ParseFloat(value, 64)
+		return reflect.ValueOf(i), err
+	}
+	return reflect.ValueOf(value), errors.New("未知的类型：" + typeName)
+}
+
+//
 // redis zset 类型设置, 单个设置
 func (redisUtils) ZaddSingle(key string, score int64, value string) error {
-	_, err := redisClient.GetClient().Do("ZADD", key, score, value)
-	return err
+	tempArgs := []interface{}{}
+	tempArgs = append(tempArgs, "ZADD")
+	tempArgs = append(tempArgs, key)
+	tempArgs = append(tempArgs, score)
+	tempArgs = append(tempArgs, value)
+	if redisClient.IsCluster {
+		return redisClient.ClusterClient.Do(tempArgs...).Err()
+	}
+	return redisClient.Client.Do(tempArgs...).Err()
 }
 
 // redis zset 类型设置, 单个移除
 func (redisUtils) ZremSingle(key string, value string) error {
-	_, err := redisClient.GetClient().Do("ZREM", key, value)
-	return err
+	tempArgs := []interface{}{}
+	tempArgs = append(tempArgs, "ZREM")
+	tempArgs = append(tempArgs, key)
+	tempArgs = append(tempArgs, value)
+	if redisClient.IsCluster {
+		return redisClient.ClusterClient.Do(tempArgs...).Err()
+	}
+	return redisClient.Client.Do(tempArgs...).Err()
 }
 
 // redis zset 类型设置, 获取score
-func (redisUtils) Zscore(key string, value string) (string, error) {
-	score, err := redisClient.GetClient().Do("ZSCORE", key, value)
-	if score == nil {
-		return "", err
+func (redisUtils) Zscore(key string, value string) (int64, error) {
+	args := []interface{}{}
+	args = append(args, "ZSCORE")
+	args = append(args, key)
+	args = append(args, value)
+	cmd := redis.NewStringCmd(args...)
+	var err error
+	if redisClient.IsCluster {
+		err = redisClient.ClusterClient.Process(cmd)
+	} else {
+		err = redisClient.Client.Process(cmd)
 	}
-	return string(score.([]byte)), err
+	if err != nil {
+		logrus.Errorf("redis ZSCORE error: %s", err.Error())
+		return 0, err
+	}
+
+	return strconv.ParseInt(cmd.Val(), 10, 64)
 }
 
 // redis 分页获取zset 列表
 func (redisUtils) ZRANGEBYSCORE(key string, startScore, endScore int64, page, rows int) ([]string, error) {
-	var value []string
-	value, err := redis.Strings(redisClient.GetClient().Do("ZRANGEBYSCORE", key, startScore, endScore, "LIMIT", page, rows))
-	return value, err
+	tempArgs := []interface{}{}
+	tempArgs = append(tempArgs, "ZRANGEBYSCORE")
+	tempArgs = append(tempArgs, key)
+	tempArgs = append(tempArgs, startScore)
+	tempArgs = append(tempArgs, endScore)
+	tempArgs = append(tempArgs, "LIMIT")
+	tempArgs = append(tempArgs, page)
+	tempArgs = append(tempArgs, rows)
+	cmd := redis.NewStringSliceCmd(tempArgs...)
+	var err error
+	if redisClient.IsCluster {
+		err = redisClient.ClusterClient.Process(cmd)
+	} else {
+		err = redisClient.Client.Process(cmd)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return cmd.Result()
 }
 
 // redis 分页获取zset 列表,job用的
 // -inf = 小于当前时间
 func (redisUtils) ZRANGEBYSCOREBYJOB(key string, endScore int64, page, rows int) ([]string, error) {
-	var value []string
-	value, err := redis.Strings(redisClient.GetClient().Do("ZRANGEBYSCORE", key, "-inf", endScore, "LIMIT", page, rows))
-	return value, err
+	var cmd *redis.StringSliceCmd = nil
+	if redisClient.IsCluster {
+		cmd = redisClient.ClusterClient.ZRangeByScore(key, &redis.ZRangeBy{Max: strconv.FormatInt(endScore, 10), Offset: int64(page * rows), Count: int64(rows)})
+	} else {
+		cmd = redisClient.Client.ZRangeByScore(key, &redis.ZRangeBy{Max: strconv.FormatInt(endScore, 10), Offset: int64(page * rows), Count: int64(rows)})
+	}
+	return cmd.Result()
 }
 
 // redis 获取zset
 func (redisUtils) ZRANGE(key string) (map[string]string, error) {
-	value, err := redis.StringMap(redisClient.GetClient().Do("ZRANGE", key, 0, 1, "WITHSCORES"))
-	return value, err
-}
-
-// redis 获取zset 交集(只求2个key)
-func (redisUtils) ZINTERSTORE(key1, key2, newKey string) int {
-	//v, err := redisCilent.GetClient().Do()("ZINTERSTORE", newKey, 2, key1, key2)
-	i, _ := redisClient.GetClient().Do("ZINTERSTORE", newKey, 2, key1, key2)
-	return cast.ToInt(i)
-}
-
-// redis zset 集合成员数
-func (redisUtils) ZCARD(key string) (int, error) {
-	s, err := redis.Int(redisClient.GetClient().Do("ZCARD", key))
-	return s, err
-}
-
-//读取redis中自己的消息队列
-func (redisUtils) LpopMessage() []byte {
-	msg, _ := redis.Bytes(redisClient.GetClient().Do("LPOP", redisClient.ServerKey))
-	return msg
-}
-
-// 存储单个list
-func (redisUtils) LPUSH(key, value string) error {
-	_, err := redisClient.GetClient().Do("LPUSH", key, value)
-	return err
-}
-
-// 读取list值
-func (redisUtils) LRANGE(key string) (string, error) {
-	count, _ := redisClient.GetClient().Do("LLEN", key)
-	value, _ := redis.Values(redisClient.GetClient().Do("LRANGE", key, 0, count))
-	var data []string
-	if err := redis.ScanSlice(value, &data); err != nil {
-		return "", err
+	tempArgs := []interface{}{}
+	tempArgs = append(tempArgs, "ZRANGE")
+	tempArgs = append(tempArgs, key)
+	tempArgs = append(tempArgs, 0)
+	tempArgs = append(tempArgs, 1)
+	tempArgs = append(tempArgs, "WITHSCORES")
+	cmd := redis.NewStringStringMapCmd(tempArgs...)
+	var err error
+	if redisClient.IsCluster {
+		err = redisClient.ClusterClient.Process(cmd)
+	} else {
+		err = redisClient.Client.Process(cmd)
 	}
-	// 如果为空
-	if data == nil || len(data) == 0 {
-		return "", nil
+	if err != nil {
+		return nil, err
 	}
-	// 拼接成json格式
-	return "[" + strings.Join(data, ",") + "]", nil
-}
-
-//可以一次push多条数据
-func (redisUtils) RPUSH(key string, args ...interface{}) error {
-	arr := []interface{}{key}
-	for _, value := range args {
-		arr = append(arr, value)
-	}
-	_, err := redisClient.GetClient().Do("RPUSH", arr...)
-	return err
-}
-
-//获取list长度
-func (redisUtils) LLEN(key string) (int, error) {
-	return redis.Int(redisClient.GetClient().Do("LLEN", key))
+	return cmd.Result()
 }
 
 func (redisUtils) BuildKey(prefix common.RedisKey, key interface{}) string {

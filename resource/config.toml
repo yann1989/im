@@ -27,7 +27,7 @@
     # redis
     [dao.redis]
         Addr = "127.0.0.1:6379"
-        Size = 10          #redis 连接池大小
+        IsCluster = false
 
 [snowflake]  #雪花算法 通过区分业务id或者机器id 生成唯一id
     WorkerId = 1   # 1-31  机器id

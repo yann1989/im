@@ -5,12 +5,15 @@ go 1.14
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/emicklei/go-restful v2.12.0+incompatible
+	github.com/go-redis/redis/v7 v7.4.0
 	github.com/go-sql-driver/mysql v1.5.0
-	github.com/gomodule/redigo v1.8.1
+	github.com/gomodule/redigo v1.8.1 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/jinzhu/gorm v1.9.12
 	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/mailru/easygo v0.0.0-20190618140210-3c14a0dc985f
+	github.com/mitchellh/mapstructure v1.1.2
+	github.com/onsi/ginkgo v1.12.3 // indirect
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.0.0
