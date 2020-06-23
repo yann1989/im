@@ -53,14 +53,14 @@ func Accept(request *restful.Request, response *restful.Response) *Node {
 		return nil
 	}
 
-	//将连接放入管理, 添加失败则关闭连接返回
+	//todo 如果是客服登录设置上线状态
+
+	//将连接放入管理, 添加失败则关闭连接, 设置状态为下线返回
 	node := manager.Add(uid, conn)
 	if node == nil {
 		conn.Close()
 		return nil
 	}
-
-	//todo 根据业务需求, 可记录在线状态
 
 	return node
 }

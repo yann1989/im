@@ -65,12 +65,12 @@ func entryPoint(_ *cobra.Command, _ []string) {
 	}); err != nil {
 		panic(err)
 	}
-	// 注册mq
-	if err := yannChat.Register(func(ctx *context.Context) (service chat.Service, err error) {
-		return config.MQ, nil
-	}); err != nil {
-		panic(err)
-	}
+	//// 注册mq
+	//if err := yannChat.Register(func(ctx *context.Context) (service chat.Service, err error) {
+	//	return config.MQ, nil
+	//}); err != nil {
+	//	panic(err)
+	//}
 	// 构建连接管理工具
 	if err := yannChat.Register(func(ctx *context.Context) (service chat.Service, err error) {
 		return config.Manager, nil

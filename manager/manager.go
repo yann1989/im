@@ -102,7 +102,7 @@ func (m *ConnectManager) Add(id int64, conn *websocket.Conn) *Node {
 		if ev&(netpoll.EventReadHup|netpoll.EventHup) != 0 {
 			defer func() {
 				if err := recover(); err != nil {
-					logrus.Errorf("eof 释放资源panic: %s", err)
+					logrus.Errorf("eof 释放资源panic: %v", err)
 				}
 			}()
 			m.Remove(id) //闭包
@@ -112,11 +112,10 @@ func (m *ConnectManager) Add(id int64, conn *websocket.Conn) *Node {
 		manager.gopool.Schedule(func() {
 			defer func() {
 				if err := recover(); err != nil {
-					fmt.Println("读事件执行失败")
+					logrus.Errorf("读事件执行panic: %v", err)
 				}
 			}()
 			Receiver(node) //闭包
-
 		})
 	}); err != nil {
 		return nil
@@ -144,6 +143,7 @@ func (m *ConnectManager) Remove(id int64) {
 	manager.rwlocker.Lock()
 	defer manager.rwlocker.Unlock()
 	if node, has := manager.nodes[id]; has {
+		// todo 如果是客服则设置客服状态为下线
 		err := manager.poller.Stop(node.fd)
 		if err != nil {
 			logrus.Errorf("关闭连接失败: %S", err)

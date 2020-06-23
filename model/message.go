@@ -6,7 +6,7 @@ package model
 
 type Message struct {
 	MsgID       int64  `json:"msg_id,omitempty"`       //唯一id
-	ContactID   int64  `json:"contact_id,omitempty"`   //私聊的时候必传联系人id
+	SessionID   int64  `json:"session_id,omitempty"`   //私聊的时候必会话id
 	FromID      int64  `json:"from_id,omitempty"`      //谁发的
 	ToID        int64  `json:"to_id,omitempty"`        //发给谁
 	MsgType     int    `json:"msg_type"`               //消息类型 1=群聊 2=私聊

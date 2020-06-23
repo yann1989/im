@@ -393,3 +393,12 @@ func (redisUtils) BuildKey(prefix common.RedisKey, key interface{}) string {
 	redisKey += cast.ToString(key)
 	return redisKey
 }
+
+//广播消息
+func (redisUtils) Broadcast(msg []byte) error {
+	if redisClient.IsCluster {
+		return redisClient.ClusterClient.Publish(redisClient.REDIS_SUB_KEY, msg).Err()
+	} else {
+		return redisClient.Client.Publish(redisClient.REDIS_SUB_KEY, msg).Err()
+	}
+}

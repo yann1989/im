@@ -11,20 +11,16 @@ import (
 	"time"
 	"yann-chat/common"
 	"yann-chat/model"
-	"yann-chat/tools/mq"
+	"yann-chat/tools/dao/redisClient"
+
 	"yann-chat/tools/utils"
 )
 
-//消费mq
+//消费redis subscription
 func (m *ConnectManager) startConsume() {
-	msgs, err := mq.StartConsume()
-	if err != nil {
-		logrus.Errorf("amqp 开始消费失败, 失败原因:%s", err.Error())
-		panic("amqp 开始消费失败, 失败原因:%s" + err.Error())
-	}
-	for msg := range msgs {
+	for ch := range redisClient.Ch {
 		manager.gopool.Schedule(func() {
-			m.dispatch(msg.Body)
+			m.dispatch([]byte(ch.Payload))
 		})
 	}
 	logrus.Infof("退出conusme")
@@ -42,9 +38,8 @@ func (m *ConnectManager) dispatch(data []byte) {
 
 	//根据消息类型分发消息
 	switch msg.MsgType {
-
-	//私聊
-	case common.MSG_TYPE_SINGLE, common.MSG_TYPE_SYSTEM, common.MSG_TYPE_SERVICE:
+	//私聊, 定点系统通知, 客服消息
+	case common.MSG_TYPE_SINGLE, common.MSG_TYPE_SINGLE_SYSTEM, common.MSG_TYPE_SERVICE:
 		//查看目标用户是否在线,在线则发送
 		manager.rwlocker.RLock()
 		defer manager.rwlocker.RUnlock()
@@ -75,6 +70,15 @@ func (m *ConnectManager) dispatch(data []byte) {
 				node.Conn.SetWriteDeadline(time.Now().Add(time.Second * 3))
 				node.Conn.WriteMessage(websocket.TextMessage, data)
 			}
+		}
+	//全局系统通知
+	case common.MSG_TYPE_GLOBAL_SYSTEM:
+		//发送给所有人.
+		manager.rwlocker.RLock()
+		defer manager.rwlocker.RUnlock()
+		for _, node := range manager.nodes {
+			node.Conn.SetWriteDeadline(time.Now().Add(time.Second * 3))
+			node.Conn.WriteMessage(websocket.TextMessage, data)
 		}
 	}
 }
